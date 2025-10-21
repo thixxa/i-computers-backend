@@ -3,8 +3,11 @@ import mongoose from "mongoose"
 import userRouter from "./routes/userRouter.js"
 import jwt from "jsonwebtoken"
 import productRouter from "./routes/ProductRouter.js"
+import cors from "cors"
+import dotenv from "dotenv"
 
-const mongoURL = "mongodb+srv://thisanda:2002@cluster0.m9whicb.mongodb.net/CBC_Database?retryWrites=true&w=majority&appName=Cluster0"
+dotenv.config()
+const mongoURL = process.env.MONGO_URL
 
 //project ekayi cluster ekayi sambanda karana eka
 mongoose.connect(mongoURL)
@@ -13,6 +16,8 @@ mongoose.connect(mongoURL)
 })
 
 const app = express()
+
+app.use(cors()) //cors eka use krnwa. meken wenne different origin wala front end ekak thiyenawanm eken api ekata call krnna puluwan wenawa
 
 app.use(express.json())
 
@@ -24,7 +29,7 @@ app.use((req,res,next)=>{
     if(authorizationHeader != null){
         const token = authorizationHeader.replace("Bearer ", "")
 
-        jwt.verify(token, "secretKey96$2025", 
+        jwt.verify(token, process.env.JWT_SECRET, 
             (error,content)=>{
                 if(content == null){
                     console.log("Invalid token")
@@ -45,8 +50,8 @@ app.use((req,res,next)=>{
 //index.js ekata studentRouter.js eka sambanda kara(main road ekata athuru para haduwa)
 //plug krnawa kynne mekta
 
-app.use("/users", userRouter)
-app.use("/products", productRouter)
+app.use("/api/users", userRouter)
+app.use("/api/products", productRouter)
 
 app.listen(3000, ()=>{
     console.log("server is running on port 3000")
