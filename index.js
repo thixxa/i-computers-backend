@@ -29,11 +29,13 @@ app.use((req,res,next)=>{
     if(authorizationHeader != null){
         const token = authorizationHeader.replace("Bearer ", "")
 
+        console.log("Token found : " + token)
+
         jwt.verify(token, process.env.JWT_SECRET, 
             (error,content)=>{
                 if(content == null){
                     console.log("Invalid token")
-                    res.json({
+                    res.status(401).json({
                         message : "Invalid token"
                     })
                 }else{
