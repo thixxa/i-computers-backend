@@ -35,7 +35,7 @@ export function loginUser(req,res){
     User.find({email : email}).then(
         (users)=>{
             if(users[0] == null){
-                res.json({
+                res.status(404).json({
                     message: "User not found"
                 })
             }else{

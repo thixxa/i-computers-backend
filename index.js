@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken"
 import productRouter from "./routes/ProductRouter.js"
 import cors from "cors"
 import dotenv from "dotenv"
+import orderRouter from "./routes/orderRouter.js"
 
 dotenv.config()
 const mongoURL = process.env.MONGO_URL
@@ -29,17 +30,13 @@ app.use((req,res,next)=>{
     if(authorizationHeader != null){
         const token = authorizationHeader.replace("Bearer ", "")
 
-        console.log("Token found : " + token)
-
         jwt.verify(token, process.env.JWT_SECRET, 
             (error,content)=>{
                 if(content == null){
-                    console.log("Invalid token")
                     res.status(401).json({
                         message : "Invalid token"
                     })
                 }else{
-                    console.log(content)
                     req.user = content
                     next() //meka function ekak. meken wenne adala kenata meka yawana eka
                 }
@@ -54,6 +51,7 @@ app.use((req,res,next)=>{
 
 app.use("/api/users", userRouter)
 app.use("/api/products", productRouter)
+app.use("/api/orders", orderRouter);
 
 app.listen(3000, ()=>{
     console.log("server is running on port 3000")
