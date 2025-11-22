@@ -14,6 +14,8 @@ const mongoURL = process.env.MONGO_URL
 mongoose.connect(mongoURL)
 .then( ()=>{
     console.log("Connected to mongoDB cluster")
+}).catch( (error)=>{
+    console.log(error);
 })
 
 const app = express()
