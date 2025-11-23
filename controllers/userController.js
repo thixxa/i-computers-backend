@@ -1,4 +1,4 @@
-import User from "../models/User.js";
+import User from "../models/user.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
@@ -84,4 +84,15 @@ export function isAdmin(req){
         return false
     }
     return true
+}
+
+export function getUsers(req,res){
+    if(req.user == null){
+        return res.status(401).json({
+            message : "Unauthorized"
+        });
+    }
+
+    res.json(req.user);
+
 }

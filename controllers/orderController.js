@@ -55,7 +55,7 @@ export async function createOrder(req,res){
             // }
 
             items.push({
-                productI : product.productID,
+                productID : product.productID,
                 name : product.name,
                 price : product.price,
                 quantity : req.body.items[i].quantity,
@@ -87,6 +87,7 @@ export async function createOrder(req,res){
         });
 
     }catch(error){
+        console.log(error);
 
         return res.status(500).json({
             message : "Error creating order",
