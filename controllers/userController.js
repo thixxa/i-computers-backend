@@ -2,6 +2,7 @@ import User from "../models/user.js";
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
+import axios from "axios"
 
 dotenv.config()
 export function createUser(req,res){
@@ -15,7 +16,6 @@ export function createUser(req,res){
         firstName : data.firstName,
         lastName : data.lastName,
         password : hashedPassword,
-        role : data.role,
     })
 
     user.save().then(
@@ -94,5 +94,72 @@ export function getUsers(req,res){
     }
 
     res.json(req.user);
+
+}
+
+//google login
+export async function googleLogin(req,res){
+    console.log(req.body.token);
+    try{
+        const response = await axios.get("https://www.googleapis.com/oauth2/v3/userinfo",{
+            headers: {
+                Authorization: `Bearer ${req.body.token}`
+            }
+        })
+        console.log(response.data);
+        //check if user already exists
+        const user = await User.findOne({email: response.data.email})
+        if(user == null){
+            const newUser = new User({
+                email: response.data.email,
+                firstName: response.data.given_name,
+                lastName: response.data.family_name,
+                isEmailVerified: response.data.email_verified,
+                image: response.data.picture,
+                password: "123" 
+            })
+            await newUser.save()
+            const payload = {
+                email: newUser.email,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
+                role: newUser.role,
+                isEmailVerified: newUser.isEmailVerified,
+                image: newUser.image
+            };
+            const token = jwt.sign(payload, process.env.JWT_SECRET, {
+                expiresIn: "150h"
+            })
+            res.json({
+                message: "Login successful",
+                token: token,
+                role: newUser.role,
+            });
+
+        }else{
+            //user already exists
+            const payload = {
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                role: user.role,
+                isEmailVerified: user.isEmailVerified,
+                image: user.image
+            };
+            const token = jwt.sign(payload, process.env.JWT_SECRET, {
+                expiresIn: "150h"
+            })
+            res.json({
+                message: "Login successful",
+                token: token,
+                role: user.role,
+            });
+        }
+    }catch(error){
+        res.status(500).json({
+            message: "Google login failed",
+            error: error.message
+        })
+    }
 
 }

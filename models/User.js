@@ -30,11 +30,12 @@ const userSchema = new mongoose.Schema(
         isEmailVerified : {
             type : Boolean,
             default : false
+        },
+        image : {
+            type : String,
+            required : true,
+            default : "/default.jpg"
         }
-        //image : {
-            //type : String,
-          //  required : "/default.jpg"
-        //}
     }
 )
 
