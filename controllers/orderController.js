@@ -7,7 +7,7 @@ export async function createOrder(req,res){
 
     //check if user is authenticated
     if(req.user == null){
-        return res.status(401).json({
+        res.status(401).json({
             message : "Unauthorized",
         });
         return;
@@ -83,7 +83,7 @@ export async function createOrder(req,res){
         await newOrder.save();
         return res.status(201).json({
             message : "Order created successfully",
-            order : newOrder,
+            orderId : orderId,
         });
 
     }catch(error){
@@ -101,21 +101,22 @@ export async function getOrders(req,res){
         res.status(401).json({
             message : "Unauthorized"
         });
+        return;
     }
 
-    if(!isAdmin(req)){
-        const orders = await Order.find().sort({date : -1})
+    if(isAdmin(req)){
+        const orders = await Order.find().sort({date : -1});
         res.json(orders);
     }else{
-        const orders = await Order.find({email : req.user.email}).sort({date : -1})
+        const orders = await Order.find({ email: req.user.email }).sort({date : -1,});
         res.json(orders);
     }
 }
 
 export async function updateOrderStatus(req,res){
     if(!isAdmin(req)){
-        return res.status(403).json({
-            message : "Unauthorized access"
+        res.status(401).json({
+            message : "Unauthorized"
         });
         return;
     }
@@ -125,10 +126,9 @@ export async function updateOrderStatus(req,res){
         const notes = req.body.notes;
 
         await Order.updateOne(
-            {orderId : orderId},
-            {status : status,
-            notes : notes
-        });
+            { orderId: orderId },
+            { status: status, notes: notes }
+        );
         res.json({
             message : "Order status updated successfully"
         });

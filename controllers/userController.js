@@ -10,7 +10,7 @@ dotenv.config()
 
 //configure nodemailer
 const transporter = nodemailer.createTransport({
-    service: 'Gmail',
+    service: 'gmail',
     host: 'smtp.gmail.com',
     port: 587,
     secure: false,
@@ -54,7 +54,14 @@ export function loginUser(req,res){
                     message: "User not found"
                 })
             }else{
-                const user = users[0]            
+                const user = users[0]  
+                
+                if(user.isBlocked){
+                    return  res.status(403).json({
+                        message: "Your account has been blocked. Please contact support.",
+                    });
+                    return;
+                }
 
                 const isPasswordCorrect = bcrypt.compareSync(password,user.password)
                 
@@ -93,12 +100,12 @@ export function loginUser(req,res){
 //user adminda kiyala balana function eka
 export function isAdmin(req){
       if(req.user == null){
-        return false
+        return false;
     }
     if(req.user.role != "admin"){
-        return false
+        return false;
     }
-    return true
+    return true;
 }
 
 export function getUsers(req,res){
@@ -152,6 +159,12 @@ export async function googleLogin(req,res){
             });
 
         }else{
+            if(user.isBlocked){
+                return  res.status(403).json({
+                    message: "Your account has been blocked. Please contact support."
+                });
+                return;
+            }    
             //user already exists
             const payload = {
                 email: user.email,
@@ -243,17 +256,67 @@ export async function sendOTP(req,res) {
         if (err) {
             return res.status(500).json({
                 message: "Failed to send OTP",
-                error: err.message
+                error: err.message,
             });
         } else {
             return res.json({
-                message: "OTP sent successfully"
+                message: "OTP sent successfully",
             });
         }
     });
     }catch(error){
         res.status(500).json({
             message: "Failed to send OTP",
+            error: error.message,
+        });
+    }
+}
+
+export async function getAllUsers(req,res){
+    if(!isAdmin(req)){
+        res.status(403).json({
+            message : "Only admin can view all users"
+        })
+        return
+    }
+    try {
+        const users = await User.find();
+        res.json(users);
+    } catch (error) {
+        res.status(500).json({
+            message: "Error fetching users",
+            error: error.message
+        });
+    }
+}
+
+//update user status (block/unblock)
+export async function updateUserStatus(req, res) {
+    if (!isAdmin(req)) {
+        return res.status(403).json({
+            message: "Only admin can update user status"
+        });
+    }
+    const email = req.params.email;
+
+    if(req.user.email === email){
+        return res.status(400).json({
+            message: "Admin cannot update their own status"
+        });
+    }
+    const isBlocked = req.body.isBlocked;
+
+    try {
+        const user = await User.updateOne(
+            { email: email },
+            { $set: { isBlocked: isBlocked } }
+        );
+        res.json({
+            message: "User status updated successfully"
+        });
+    }catch (error) {
+        return res.status(500).json({
+            message: "Error updating user status",
             error: error.message
         });
     }
