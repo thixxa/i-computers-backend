@@ -3,8 +3,23 @@ import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 import dotenv from "dotenv"
 import axios from "axios"
+import nodemailer from "nodemailer"
+import Otp from "../models/OTP.js";
 
 dotenv.config()
+
+//configure nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    auth: {
+        user: "thisandawellage@gmail.com",
+        pass: process.env.GMAIL_APP_PASSWORD
+    }
+});
+
 export function createUser(req,res){
 
     const data = req.body
@@ -162,4 +177,84 @@ export async function googleLogin(req,res){
         })
     }
 
+}
+
+export async function validateOTPAndUpdatePassword(req, res) {
+
+    try {
+    const otp = req.body.otp;
+    const newPassword = req.body.newPassword;
+    const email = req.body.email;
+
+    const otpRecord = await Otp.findOne({ email: email, otp: otp });
+    if (!otpRecord) {
+        return res.status(400).json({
+            message: "Invalid OTP"
+        });
+    }
+    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+    await User.updateOne({ email: email }, { 
+        $set: { password: hashedPassword , isEmailVerified: true } 
+    });
+    await Otp.deleteMany({ email: email });
+    res.json({
+        message: "Password updated successfully"
+    });
+    } catch (error) {
+        res.status(500).json({
+            message: "Failed to update password",
+            error: error.message
+        });
+    }
+}
+
+//send OTP to email
+export async function sendOTP(req,res) {
+
+    try{
+    const email = req.params.email;
+    const user = await User.findOne({email: email});
+    if(user == null){
+        return res.status(404).json({
+            message: "User not found"
+        })
+        return
+    }
+    //delete existing OTPs for the email
+    await Otp.deleteMany({email: email});
+
+    //generate random 6 digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    //save OTP to database
+    const newOtp = new Otp({
+        email: email,
+        otp: otp
+    });
+    await newOtp.save();
+
+    const message = {
+        from: "thisandawellage@gmail.com",
+        to: email,
+        subject: "Your OTP Code",
+        text: `Your OTP code is: ${otp}` 
+    }
+    transporter.sendMail(message, (err, info) => {
+        if (err) {
+            return res.status(500).json({
+                message: "Failed to send OTP",
+                error: err.message
+            });
+        } else {
+            return res.json({
+                message: "OTP sent successfully"
+            });
+        }
+    });
+    }catch(error){
+        res.status(500).json({
+            message: "Failed to send OTP",
+            error: error.message
+        });
+    }
 }
