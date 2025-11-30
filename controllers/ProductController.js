@@ -111,3 +111,26 @@ export function getProductByID(req,res){
     })
 }
 
+export async function searchProducts(req,res){
+    const query = req.params.query
+    try{
+        const products = await Product.find(
+            {
+                //$or dala liyanne pahala deken onema ekakdi pennna puluwan kiyala
+                $or: [
+                    { name : { $regex : query, $options : 'i' } }, // 'i' option eka case insensitive weyi kiyala
+                    { altNames : { $elemMatch : { $regex : query, $options : 'i' } } } // altNames array eke thiyena eka athule match krnna
+                ],
+                isAvailable : true
+            }
+        )
+        return res.json(products);
+
+    }catch(error){
+        res.status(500).json({
+            message : "Error searching products",
+            error : error.message
+        })
+    }
+}
+
