@@ -6,6 +6,7 @@ import productRouter from "./routes/ProductRouter.js"
 import cors from "cors"
 import dotenv from "dotenv"
 import orderRouter from "./routes/orderRouter.js"
+import reviewRouter from "./routes/reviewRouter.js"
 
 dotenv.config()
 const mongoURL = process.env.MONGO_URL
@@ -53,7 +54,8 @@ app.use((req,res,next)=>{
 
 app.use("/api/users", userRouter)
 app.use("/api/products", productRouter)
-app.use("/api/orders", orderRouter);
+app.use("/api/orders", orderRouter)
+app.use("/api/reviews", reviewRouter);
 
 app.listen(3000, ()=>{
     console.log("server is running on port 3000")
